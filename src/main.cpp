@@ -18,6 +18,8 @@ eyes::Voice voice;
 uint32_t lastScan=0,lastPoll=0,lastFrame=0,lastLog=0,nextBlink=0;
 uint32_t blinkStart=0;
 bool blinking=false;
+uint32_t nextLook=0, lookStart=0;
+int gaze=0;
 uint8_t consecutiveFailures=0;
 
 // Audio capture runs independently of UART waits and display refreshes.
@@ -93,6 +95,16 @@ void pollControl(uint32_t now) {
 }
 
 void drawEyes(uint32_t now) {
+ // Both eyes glance in the same direction, then return to center.
+ if(voice.detected || !enabled) {
+   gaze=0;nextLook=now+random(4000,8000);
+ } else if(gaze!=0) {
+   if(uint32_t(now-lookStart)>=900) {
+     gaze=0;nextLook=now+random(4000,8000);
+   }
+ } else if(!blinking && int32_t(now-nextLook)>=0) {
+   gaze=random(2)==0?-1:1;lookStart=now;
+ }
  if(!blinking && !voice.detected && int32_t(now-nextBlink)>=0) startBlink(now);
  float openness=1.f;
  if(blinking) {
@@ -104,7 +116,8 @@ void drawEyes(uint32_t now) {
  bool success=true;
  for(int i=0;i<2;++i) {
    uint16_t frame[64];uint8_t ok=0;
-   eyes::render(frame,expression,colorIndex,i==1,voice.large,intensity,openness,enabled);
+   int visibleExpression=voice.detected?0:expression;
+   eyes::render(frame,visibleExpression,colorIndex,i==1,voice.large,intensity,openness,enabled,gaze);
    if(chain.setRGBBufferRefresh(eyeId[i],frame,&ok,35)!=CHAIN_OK || !ok) success=false;
  }
  if(success) consecutiveFailures=0;
@@ -123,11 +136,12 @@ void setup() {
  if(micReady) {
    micReady=xTaskCreatePinnedToCore(audioTask,"audio",4096,nullptr,2,nullptr,0)==pdPASS;
  }
- Serial.printf("Robot Eyes v0.1 | board=%d | PSRAM=%u | microphone=%s\n",
+ Serial.printf("Robot Eyes v0.2 | board=%d | PSRAM=%u | microphone=%s\n",
                int(M5.getBoard()),ESP.getPsramSize(),micReady?"OK":"FAILED");
  chain.begin(&Serial2,115200,config::RX_PIN,config::TX_PIN);
  delay(500);chainReady=scanChain();lastScan=millis();
  nextBlink=millis()+4000;
+ nextLook=millis()+random(4000,8000);
 }
 void loop() {
  uint32_t now=millis();M5.update();

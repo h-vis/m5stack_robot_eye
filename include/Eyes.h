@@ -23,7 +23,7 @@ inline uint16_t rgb565(Color c, float intensity) {
  return ((r&0xf8)<<8)|((g&0xfc)<<3)|(b>>3);
 }
 inline void render(uint16_t (&out)[64], int expression, int color, bool right,
-                   bool large, float intensity, float openness, bool enabled) {
+                   bool large, float intensity, float openness, bool enabled, int gaze=0) {
  std::fill(out,out+64,0);
  if (!enabled) return;
  expression=wrap(expression,6); color=wrap(color,8);
@@ -34,6 +34,8 @@ inline void render(uint16_t (&out)[64], int expression, int color, bool right,
  for(int y=0;y<8;++y) for(int x=0;x<8;++x) {
    if(!(mask[y] & (0x80>>x))) continue;
    int dx=right && (expression==2||expression==3) ? 7-x:x;
+   dx+=std::max(-1,std::min(1,gaze));
+   if(dx<0 || dx>=8) continue;
    int dy=int(lroundf(3.5f+(y-3.5f)*openness));
    dy=std::max(0,std::min(7,dy)); out[dy*8+dx]=ink;
  }

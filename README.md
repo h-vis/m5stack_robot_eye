@@ -1,4 +1,4 @@
-# Robot Eyes v0.1
+# Robot Eyes v0.2
 
 管理リポジトリ：https://github.com/h-vis/m5stack_robot_eye
 
@@ -64,14 +64,14 @@ PlatformIO設定はESP32-S3・8MB Flash・OPI PSRAM用です。
 
 ## ビルド済みファームウェアを書き込む場合
 
-`firmware/robot-eyes-v0.1.bin` はブートローダー・パーティションを含む結合バイナリです。
+`firmware/robot-eyes-v0.2.bin` はブートローダー・パーティションを含む結合バイナリです。
 **C126-ECHO専用、書き込み開始アドレスは0x0です。** 元のアプリとパーティションを上書きします。
 調整が不要なら、PCにPythonを入れ、次のコマンドでコンパイルせず書き込めます。
 `COM5` は実際のポート名に変えてください。コマンドはこのフォルダーで実行します。
 
 ```sh
 python -m pip install esptool==4.9.0
-python -m esptool --chip esp32s3 --port COM5 --baud 460800 write_flash 0x0 firmware/robot-eyes-v0.1.bin
+python -m esptool --chip esp32s3 --port COM5 --baud 460800 write_flash 0x0 firmware/robot-eyes-v0.2.bin
 ```
 
 書き込みモードへの入り方は上記と同じです。書き込み後は本体をリセットします。
@@ -125,3 +125,9 @@ ASAN_OPTIONS=detect_leaks=0 /tmp/robot-eyes-test
 - https://docs.m5stack.com/en/chain/Chain_RGB
 - https://github.com/m5stack/M5Chain
 - https://github.com/m5stack/M5Unified
+
+## アイドル時の視線移動
+無音時は4〜8秒おきに左右どちらかへ1ドット移動し、約0.9秒後に正面へ戻ります。音に反応したときは正面へ戻ります。
+
+
+音に反応している間は、選択中の表情にかかわらず丸い目になります。静かになると選択した表情へ戻ります。
